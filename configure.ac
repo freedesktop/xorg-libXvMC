@@ -45,6 +45,12 @@ PKG_CHECK_MODULES(XVMC, [x11 >= 1.6] xext xv xextproto videoproto)
 # Checks for library functions.
 AC_CHECK_FUNCS([shmat])
 
+# Check to see if dlopen is in default libraries (like Solaris, which
+# has it in libc), or if libdl is needed to get it.
+AC_CHECK_FUNC([dlopen], [],
+	AC_CHECK_LIB([dl], [dlopen], DLOPEN_LIBS="-ldl"))
+AC_SUBST(DLOPEN_LIBS)
+
 # Allow checking code with lint, sparse, etc.
 XORG_WITH_LINT
 LINT_FLAGS="${LINT_FLAGS} ${XVMC_CFLAGS}"
