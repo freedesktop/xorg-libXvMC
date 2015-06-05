@@ -491,6 +491,7 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
     CARD32 magic;
 
 #ifdef HAVE_SHMAT
+    int shmKey;
     volatile CARD32 *shMem;
     struct timezone here;
     struct timeval now;
@@ -510,7 +511,8 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
     magic = 0;
     req->magic = 0;
 #ifdef HAVE_SHMAT
-    req->shmKey = shmget(IPC_PRIVATE, 1024, IPC_CREAT | 0600);
+    shmKey = shmget(IPC_PRIVATE, 1024, IPC_CREAT | 0600);
+    req->shmKey = (CARD32) shmKey;
 
     /*
      * We fill a shared memory page with a repetitive pattern. If the
@@ -521,9 +523,9 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
      * otherwise stupid-looking pattern algorithm.
      */
 
-    if (req->shmKey >= 0) {
-	shMem = (CARD32 *) shmat(req->shmKey, NULL, 0);
-	shmctl( req->shmKey, IPC_RMID, NULL);
+    if (shmKey >= 0) {
+	shMem = (CARD32 *) shmat(shmKey, NULL, 0);
+	shmctl(shmKey, IPC_RMID, NULL);
 	if ( shMem ) {
 
 	    register volatile CARD32 *shMemC = shMem;
@@ -539,6 +541,7 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
 	    }
 	} else {
 	    req->shmKey = -1;
+	    shmKey = -1;
 	}
     }
 #else
@@ -548,14 +551,16 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
         UnlockDisplay (dpy);
         SyncHandle ();
 #ifdef HAVE_SHMAT
-	if ( req->shmKey >= 0) {
+	if (shmKey >= 0) {
 	    shmdt( (const void *) shMem );
 	}
 #endif
         return -1;
     }
 #ifdef HAVE_SHMAT
-    shmdt( (const void *) shMem );
+    if (shmKey >= 0) {
+        shmdt( (const void *) shMem );
+    }
 #endif
 
     if (rep.length > 0) {
@@ -600,7 +605,12 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
     *major = rep.major;
     *minor = rep.minor;
     *patchLevel = rep.patchLevel;
-    *isLocal = (req->shmKey > 0) ? rep.isLocal : 1;
+#ifdef HAVE_SHMAT
+    if (shmKey >= 0)
+        *isLocal = rep.isLocal;
+    else
+#endif
+        *isLocal = 1;
     return (rep.length > 0) ? Success : BadImplementation;
 }
 
