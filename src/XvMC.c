@@ -526,7 +526,7 @@ Status XvMCGetDRInfo(Display *dpy, XvPortID port,
     if (shmKey >= 0) {
 	shMem = (CARD32 *) shmat(shmKey, NULL, 0);
 	shmctl(shmKey, IPC_RMID, NULL);
-	if ( shMem ) {
+	if (shMem != (void *) -1) {
 
 	    register volatile CARD32 *shMemC = shMem;
 	    register int i;
