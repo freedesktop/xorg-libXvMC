@@ -117,7 +117,7 @@ XvMCSurfaceInfo * XvMCListSurfaceTypes(Display *dpy, XvPortID port, int *num)
 
         if(surface_info) {
 	    xvmcSurfaceInfo sinfo;
-	    int i;
+	    CARD32 i;
 
 	    *num = rep.num;
 
@@ -178,7 +178,7 @@ XvImageFormatValues * XvMCListSubpictureTypes (
 
         if(ret) {
             xvImageFormatInfo Info;
-            int i;
+            CARD32 i;
 
             *count_return = rep.num;
 
